@@ -8,6 +8,7 @@ const messageSchema = new mongoose.Schema({
 
 const conversationSchema = new mongoose.Schema(
   {
+    userId: { type: String, required: false, index: true }, // Firebase UID
     title: { type: String, default: "New Chat" },
     messages: [messageSchema],
   },

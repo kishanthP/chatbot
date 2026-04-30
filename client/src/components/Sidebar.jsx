@@ -1,7 +1,8 @@
 import { useState } from "react";
 import {
   Box, Button, Typography, List, ListItemButton,
-  ListItemText, Divider, Avatar, IconButton, TextField, InputAdornment, Tooltip,
+  ListItemText, Divider, Avatar, IconButton, TextField,
+  InputAdornment, Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
@@ -10,17 +11,25 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SearchIcon from "@mui/icons-material/Search";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import LogoutIcon from "@mui/icons-material/Logout";
+import { useAuth } from "../context/AuthContext";
 
 const SIDEBAR_WIDTH = 260;
 
 const Sidebar = ({ conversations, currentId, onNewChat, onSelectConversation, onDelete, onSearch, mode, toggleMode }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const isLight = mode === "light";
+  const { user, logout } = useAuth();
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     onSearch(e.target.value);
   };
+
+  // Determine display name and avatar letter
+  const displayName = user?.displayName || user?.phoneNumber || "User";
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+  const photoURL = user?.photoURL;
 
   return (
     <Box sx={{
@@ -159,10 +168,55 @@ const Sidebar = ({ conversations, currentId, onNewChat, onSelectConversation, on
       </Box>
 
       <Divider sx={{ borderColor: isLight ? "#e0ddd8" : "#242424" }} />
-      <Box sx={{ p: 2 }}>
-        <Typography variant="caption" color={isLight ? "#999" : "#4a4a4a"} fontSize="0.7rem">
-          Powered by Gemini 2.5 Flash
-        </Typography>
+
+      {/* ── User Profile + Logout ─────────────────────────────────────── */}
+      <Box sx={{
+        p: 1.5, display: "flex", alignItems: "center", gap: 1.25,
+        "&:hover": { bgcolor: isLight ? "#e8e5e0" : "#1e1e1e" },
+        borderRadius: "0 0 0 0", transition: "background 0.15s",
+        cursor: "default",
+      }}>
+        <Avatar
+          src={photoURL || undefined}
+          sx={{
+            width: 32, height: 32, fontSize: "0.875rem", fontWeight: 700,
+            bgcolor: "#d4956a", flexShrink: 0,
+          }}
+        >
+          {!photoURL && avatarLetter}
+        </Avatar>
+
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography
+            variant="caption" fontWeight={600} color="text.primary"
+            sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.8rem" }}
+          >
+            {displayName}
+          </Typography>
+          {user?.email && (
+            <Typography
+              variant="caption" color="text.secondary"
+              sx={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.7rem" }}
+            >
+              {user.email}
+            </Typography>
+          )}
+        </Box>
+
+        <Tooltip title="Sign out" placement="right">
+          <IconButton
+            id="logout-btn"
+            size="small"
+            onClick={logout}
+            sx={{
+              color: isLight ? "#999" : "#555",
+              flexShrink: 0,
+              "&:hover": { color: "#ff6b6b", bgcolor: "transparent" },
+            }}
+          >
+            <LogoutIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Tooltip>
       </Box>
     </Box>
   );

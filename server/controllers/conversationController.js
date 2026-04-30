@@ -7,7 +7,7 @@ const {
 
 const getAll = async (req, res) => {
   try {
-    const conversations = await getAllConversations();
+    const conversations = await getAllConversations(req.user.uid);
     res.json(conversations);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch conversations" });
@@ -35,11 +35,11 @@ const deleteOne = async (req, res) => {
 
 const search = async (req, res) => {
   try {
-    const results = await searchConversations(req.query.q || "");
+    const results = await searchConversations(req.query.q || "", req.user.uid);
     res.json(results);
   } catch (err) {
     res.status(500).json({ error: "Search failed" });
   }
 };
 
-module.exports = { getAll, getOne, deleteOne, search };
+module.exports = { getAll, getOne, deleteOne, search };

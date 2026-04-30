@@ -6,6 +6,7 @@ const {
 
 const chatController = async (req, res) => {
   const { message, conversationId } = req.body;
+  const userId = req.user.uid;
 
   try {
     const aiText = await callGemini(message);
@@ -16,7 +17,7 @@ const chatController = async (req, res) => {
       conversation = await addMessages(conversationId, message, aiText);
     } else {
       // New conversation - use first user message as title
-      conversation = await createConversation(message, message, aiText);
+      conversation = await createConversation(message, message, aiText, userId);
     }
 
     res.json({

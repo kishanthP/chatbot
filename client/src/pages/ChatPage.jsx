@@ -4,33 +4,46 @@ import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import InputBar from "../components/InputBar";
+import { useAuth } from "../context/AuthContext";
 
-const ChatPage = ({ mode, toggleMode }) => {  // ← accept mode + toggleMode
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const ChatPage = ({ mode, toggleMode }) => {
+  const { idToken } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Build a pre-configured axios instance with the Firebase ID token
+  const api = useCallback(() => {
+    return axios.create({
+      baseURL: API,
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+  }, [idToken]);
+
   useEffect(() => {
-    fetchConversations();
-  }, []);
+    if (idToken) fetchConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idToken]);
 
   const fetchConversations = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/conversations");
+      const res = await api().get("/api/conversations");
       setConversations(res.data);
     } catch (err) {
-      console.error("Failed to load conversations");
+      console.error("Failed to load conversations", err);
     }
   };
 
   const handleSelectConversation = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/conversations/${id}`);
+      const res = await api().get(`/api/conversations/${id}`);
       setMessages(res.data.messages);
       setCurrentConversationId(id);
     } catch (err) {
-      console.error("Failed to load conversation");
+      console.error("Failed to load conversation", err);
     }
   };
 
@@ -41,29 +54,24 @@ const ChatPage = ({ mode, toggleMode }) => {  // ← accept mode + toggleMode
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/conversations/${id}`);
+      await api().delete(`/api/conversations/${id}`);
       setConversations((prev) => prev.filter((c) => c._id !== id));
       if (currentConversationId === id) {
         setMessages([]);
         setCurrentConversationId(null);
       }
     } catch (err) {
-      console.error("Delete failed");
+      console.error("Delete failed", err);
     }
   };
 
   const handleSearch = async (query) => {
-    if (!query.trim()) {
-      fetchConversations();
-      return;
-    }
+    if (!query.trim()) { fetchConversations(); return; }
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/conversations/search?q=${query}`
-      );
+      const res = await api().get(`/api/conversations/search?q=${query}`);
       setConversations(res.data);
     } catch (err) {
-      console.error("Search failed");
+      console.error("Search failed", err);
     }
   };
 
@@ -74,7 +82,7 @@ const ChatPage = ({ mode, toggleMode }) => {  // ← accept mode + toggleMode
       setLoading(true);
 
       try {
-        const res = await axios.post("http://localhost:5000/api/chat", {
+        const res = await api().post("/api/chat", {
           message: text,
           conversationId: currentConversationId,
         });
@@ -89,16 +97,14 @@ const ChatPage = ({ mode, toggleMode }) => {  // ← accept mode + toggleMode
       } catch {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "assistant",
-            content: "❌ Something went wrong. Please try again.",
-          },
+          { role: "assistant", content: "❌ Something went wrong. Please try again." },
         ]);
       } finally {
         setLoading(false);
       }
     },
-    [currentConversationId]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentConversationId, idToken]
   );
 
   return (
@@ -110,8 +116,8 @@ const ChatPage = ({ mode, toggleMode }) => {  // ← accept mode + toggleMode
         onSelectConversation={handleSelectConversation}
         onDelete={handleDelete}
         onSearch={handleSearch}
-        mode={mode}              // ← pass down
-        toggleMode={toggleMode}  // ← pass down
+        mode={mode}
+        toggleMode={toggleMode}
       />
       <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, overflow: "hidden" }}>
         <ChatWindow messages={messages} loading={loading} />

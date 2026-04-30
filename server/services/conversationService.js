@@ -1,8 +1,8 @@
 const Conversation = require("../models/Conversation");
 
-// Get all conversations (only id + title + updatedAt, no messages - for sidebar)
-const getAllConversations = async () => {
-  return await Conversation.find({}, "title updatedAt createdAt")
+// Get all conversations for a specific user (only id + title + updatedAt, no messages - for sidebar)
+const getAllConversations = async (userId) => {
+  return await Conversation.find({ userId }, "title updatedAt createdAt")
     .sort({ updatedAt: -1 });
 };
 
@@ -12,8 +12,9 @@ const getConversationById = async (id) => {
 };
 
 // Create new conversation
-const createConversation = async (title, userMessage, aiMessage) => {
+const createConversation = async (title, userMessage, aiMessage, userId) => {
   const conversation = new Conversation({
+    userId,
     title: title.slice(0, 50),
     messages: [
       { role: "user", content: userMessage },
@@ -47,10 +48,10 @@ const deleteConversation = async (id) => {
   return await Conversation.findByIdAndDelete(id);
 };
 
-// Search conversations by title
-const searchConversations = async (query) => {
+// Search conversations by title for a specific user
+const searchConversations = async (query, userId) => {
   return await Conversation.find(
-    { title: { $regex: query, $options: "i" } },
+    { userId, title: { $regex: query, $options: "i" } },
     "title updatedAt"
   ).sort({ updatedAt: -1 });
 };
